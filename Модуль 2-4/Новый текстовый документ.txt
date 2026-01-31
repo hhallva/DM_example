@@ -1,0 +1,1 @@
+Scaffold-DbContext "Data Source=221-04;Initial Catalog=Dem21;Integrated Security=True;Trust Server Certificate=True" Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models -ContextDir Contexts -Context AppDbConntext 
