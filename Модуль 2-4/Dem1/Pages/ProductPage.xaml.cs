@@ -69,6 +69,11 @@ namespace Dem1.Pages
                 (_user is not null && (_user.Role.Name == "Администратор"))
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+
+            Orders.Visibility =
+               (_user is not null && (_user.Role.Name == "Администратор" || _user.Role.Name == "Менеджер"))
+                   ? Visibility.Visible
+                   : Visibility.Collapsed;
         }
 
         private void LoadProducts()
@@ -142,5 +147,9 @@ namespace Dem1.Pages
 
         private void Logout_Click(object sender, RoutedEventArgs e)
             => _frame.GoBack();
+
+        private void Orders_Click(object sender, RoutedEventArgs e)
+            => _frame.Navigate(new OrdersPage(_frame, _user));
+        
     }
 }

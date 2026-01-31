@@ -21,4 +21,19 @@ public partial class Order
     public virtual PickupPoint PickupPoint { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
+
+
+    public string Article
+    {
+        get
+        {
+            IEnumerable<OrderProduct> products = this.OrderProducts;
+
+            string result = string.Join(";", products.Select(p => p.Product.Code));
+
+            return result;
+        }
+    }
 }
+
+

@@ -35,6 +35,7 @@
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="10">
             <Button Content="Выйти" Width="150" Margin="5" Click="Logout_Click"/>
             <Button x:Name="AddProduct" Click="AddProduct_Click" Content="Создать новый товар" Width="150" Margin="5"/>
+            <Button x:Name="Orders" Click="Orders_Click"  Content="Заказы" Width="150" Margin="5"/>
         </StackPanel>
 
         <StackPanel Grid.Row="1" x:Name="FilterStackPanel" Orientation="Horizontal" Margin="10">

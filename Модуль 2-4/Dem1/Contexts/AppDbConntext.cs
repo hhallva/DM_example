@@ -80,7 +80,7 @@ public partial class AppDbConntext : DbContext
 
             entity.HasOne(d => d.Order).WithMany(p => p.OrderProducts)
                 .HasForeignKey(d => d.OrderId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_OrderProduct_Order");
 
             entity.HasOne(d => d.Product).WithMany(p => p.OrderProducts)
