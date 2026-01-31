@@ -5,7 +5,6 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Dem1.Pages
 {
@@ -17,6 +16,7 @@ namespace Dem1.Pages
         private Frame _frame;
         private Product _product;
         private string _newImagePath;
+
         private AppDbConntext db = new AppDbConntext();
 
         public EditProductPage(Frame frame, int id)
@@ -24,76 +24,103 @@ namespace Dem1.Pages
             InitializeComponent();
             _frame = frame;
 
-            LoadLists();
+            try
+            {
+                LoadLists();
 
-            if (id != 0)
-            {
-                LoadProduct(id);
-                Title = "Редактирование товара";
+                if (id != 0)
+                {
+                    LoadProduct(id);
+                    Title = "Редактирование товара";
+                }
+                else
+                {
+                    _product = new Product();
+                    Title = "Добавление товара";
+                }
             }
-            else
+            catch (Exception)
             {
-                _product = new Product();
-                Title = "Добавление товара";
+                MessageBox.Show("Произошла ошибка при загрузке данных о товаре. Проверьте соединение с интернетом или повторите позже.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void LoadLists()
         {
+
             CategoryComboBox.ItemsSource = db.Categories.ToList();
             ManufacturerComboBox.ItemsSource = db.Manufacturers.ToList();
             ProviderComboBox.ItemsSource = db.Providers.ToList();
+
         }
 
         private void LoadProduct(int id)
         {
-            _product = db.Products
-                .First(p => p.Id == id);
+            try
+            {
+                _product = db.Products
+                    .First(p => p.Id == id);
 
-            CodeTextBox.Text = _product.Code;
-            NameTextBox.Text = _product.Name;
-            DescriptionTextBox.Text = _product.Desctription;
-            PriceTextBox.Text = _product.Price.ToString();
-            UnitTextBox.Text = _product.Unit;
-            DiscountTextBox.Text = _product.Discount.ToString();
-            AmountTextBox.Text = _product.Amount.ToString();
+                CodeTextBox.Text = _product.Code;
+                NameTextBox.Text = _product.Name;
+                DescriptionTextBox.Text = _product.Desctription;
+                PriceTextBox.Text = _product.Price.ToString();
+                UnitTextBox.Text = _product.Unit;
+                DiscountTextBox.Text = _product.Discount.ToString();
+                AmountTextBox.Text = _product.Amount.ToString();
 
-            CategoryComboBox.SelectedItem = _product.Category;
-            ManufacturerComboBox.SelectedItem = _product.Manufacturer;
-            ProviderComboBox.SelectedItem = _product.Provider;
+                CategoryComboBox.SelectedItem = _product.Category;
+                ManufacturerComboBox.SelectedItem = _product.Manufacturer;
+                ProviderComboBox.SelectedItem = _product.Provider;
 
-            ProductImage.Source = new BitmapImage(new Uri(_product.PhotoPath));
+                ProductImage.Source = new BitmapImage(new Uri(_product.PhotoPath));
+
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Произошла ошибка при загрузке данных о товаре. Проверьте соединение с интернетом или повторите позже.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void SelectImage_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog();
-            dialog.Filter = "Image|*.png;*.jpg";
-
-            if (dialog.ShowDialog() is not true)
-                return;
-
-            var image = new BitmapImage(new Uri(dialog.FileName));
-
-            if (image.PixelWidth > 300 || image.PixelHeight > 200)
+            try
             {
-                MessageBox.Show("Максимальный размер изображения - 300х200 пикселей", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                var dialog = new OpenFileDialog();
+                dialog.Filter = "Image|*.png;*.jpg";
+
+                if (dialog.ShowDialog() is not true)
+                    return;
+
+                var image = new BitmapImage(new Uri(dialog.FileName));
+
+                if (image.PixelWidth > 300 || image.PixelHeight > 200)
+                {
+                    MessageBox.Show("Максимальный размер изображения - 300х200 пикселей", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var folder = Path.Combine(Environment.CurrentDirectory, "Images");
+                Directory.CreateDirectory(folder);
+
+                _newImagePath = Path.Combine(folder, Path.GetFileName(dialog.FileName));
+
+                File.Copy(dialog.FileName, _newImagePath, true); //System.IO.IOException: "The process cannot access the file 'C:\Users\221\students\ispp-21\DM_example\Модуль 2-4\Dem1\bin\Debug\net8.0-windows\Images\photo.jpg' because it is being used by another process."
+                ProductImage.Source = image;
+
             }
-
-            var folder = Path.Combine(Environment.CurrentDirectory, "Images");
-            Directory.CreateDirectory(folder);
-
-            _newImagePath = Path.Combine(folder, Path.GetFileName(dialog.FileName));
-            File.Copy(dialog.FileName, _newImagePath, true);
-            ProductImage.Source = image;
-
+            catch (Exception)
+            {
+                MessageBox.Show("Произошла ошибка при выборе изображения", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void Back_Click(object sender, RoutedEventArgs e) 
+        private void Back_Click(object sender, RoutedEventArgs e)
             => _frame.GoBack();
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
+
             _product.Code = CodeTextBox.Text;
             _product.Name = NameTextBox.Text;
             _product.Desctription = DescriptionTextBox.Text;
@@ -131,15 +158,26 @@ namespace Dem1.Pages
 
         private void Delete_Click(object sender, RoutedEventArgs e)
         {
-            if (db.OrderProducts.Any(p => p.ProductId == _product.Id))
+            try
             {
-                MessageBox.Show("Товар нельзя удалить так как он присутствует в заказе", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
+                if (db.OrderProducts.Any(p => p.ProductId == _product.Id))
+                {
+                    MessageBox.Show("Товар нельзя удалить так как он присутствует в заказе", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-            db.Products.Remove(_product);
-            db.SaveChanges();
-            _frame.GoBack();
+                MessageBoxResult dialog = MessageBox.Show("Вы уверены что хотите удалить данный товар?", "Предупреждение", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (dialog == MessageBoxResult.Yes)
+                {
+                    db.Products.Remove(_product);
+                    db.SaveChanges();
+                    _frame.GoBack();
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Произошла ошибка при удалении данных о товаре", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

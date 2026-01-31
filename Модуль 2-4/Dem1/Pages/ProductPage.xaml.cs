@@ -11,6 +11,7 @@ namespace Dem1.Pages
         private readonly Frame _frame;
         private readonly User _user;
         private List<Product> _products;
+        private string _oldImagePath;
 
         public ProductPage(Frame frame, User user)
         {
@@ -21,12 +22,19 @@ namespace Dem1.Pages
 
             _frame.Navigated += Frame_Navigated;
 
-            LoadUser();
-            LoadProducts();
-            LoadProviders();
+            try
+            {
+                LoadUser();
+                LoadProducts();
+                LoadProviders();
 
-            ProviderComboBox.SelectedIndex = 0;
-            SortComboBox.SelectedIndex = 0;
+                ProviderComboBox.SelectedIndex = 0;
+                SortComboBox.SelectedIndex = 0;
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Произошла ошибка при загрузке данных. Проверьте соединение с интернетом или повторите позже.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void Frame_Navigated(object sender, System.Windows.Navigation.NavigationEventArgs e)
@@ -56,6 +64,11 @@ namespace Dem1.Pages
                 (_user is not null && (_user.Role.Name == "Администратор" || _user.Role.Name == "Менеджер"))
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+
+            AddProduct.Visibility =
+                (_user is not null && (_user.Role.Name == "Администратор"))
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
         }
 
         private void LoadProducts()
@@ -72,45 +85,59 @@ namespace Dem1.Pages
 
         private void FiterChanged(object sender, EventArgs e)
         {
-            IEnumerable<Product> result = _products;
-
-            string search = SearchTextBox.Text;
-
-            if (!string.IsNullOrEmpty(search))
+            try
             {
-                result = result.Where(p =>
-                    p.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    p.Desctription.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    p.Manufacturer.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    p.Provider.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    p.Category.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    p.Code.Contains(search, StringComparison.OrdinalIgnoreCase));
-            }
+                IEnumerable<Product> result = _products;
 
-            if (ProviderComboBox.SelectedIndex > 0)
+                string search = SearchTextBox.Text;
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    result = result.Where(p =>
+                        p.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                        p.Desctription.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                        p.Manufacturer.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                        p.Provider.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                        p.Category.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                        p.Code.Contains(search, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (ProviderComboBox.SelectedIndex > 0)
+                {
+                    string provider = ProviderComboBox.SelectedItem.ToString();
+                    result = result.Where(p => p.Provider.Name == provider);
+                }
+
+                switch (SortComboBox.SelectedIndex)
+                {
+                    case 1: result = result.OrderBy(p => p.Amount); break;
+                    case 2: result = result.OrderByDescending(p => p.Amount); break;
+                }
+
+                ProductListView.ItemsSource = result.ToList();
+            }
+            catch (Exception)
             {
-                string provider = ProviderComboBox.SelectedItem.ToString();
-                result = result.Where(p => p.Provider.Name == provider);
+                MessageBox.Show("Не удалось отобразить данные. Проверьте подключение к интернету.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            switch (SortComboBox.SelectedIndex)
-            {
-                case 1: result = result.OrderBy(p => p.Amount); break;
-                case 2: result = result.OrderByDescending(p => p.Amount); break;
-            }
-
-            ProductListView.ItemsSource = result.ToList();
         }
 
         private void ProductListView_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (_user is not null &&
-                _user.Role.Name == "Администратор" &&
-                ProductListView.SelectedItem is Product product)
-                _frame.Navigate(new EditProductPage(_frame, product.Id));
+            try
+            {
+                if (_user is not null &&
+                    _user.Role.Name == "Администратор" &&
+                    ProductListView.SelectedItem is Product product)
+                    _frame.Navigate(new EditProductPage(_frame, product.Id));
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Не удалось перейти к странице реактирования товара. Проверьте подключение к интернету и/или проверьте выбанный товар.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void AddProduct_Click(object sender, RoutedEventArgs e) 
+        private void AddProduct_Click(object sender, RoutedEventArgs e)
             => _frame.Navigate(new EditProductPage(_frame, 0));
 
         private void Logout_Click(object sender, RoutedEventArgs e)
